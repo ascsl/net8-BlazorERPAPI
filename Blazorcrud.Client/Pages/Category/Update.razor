@@ -1,0 +1,51 @@
+@page "/category/update/{guid}"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject ICategoryService categoryService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Edit Store</h1>
+<br/>
+
+<Form ButtonText="Update" category="@category" loading="@loading"
+      OnValidSubmit="@UpdateRegister" />
+
+@code {
+    bool loading = false;
+    
+    [Parameter]
+    public string CategoryGuid { get; set; }
+
+    Category category = new Category
+        {
+        Name = "",
+    };
+    
+    protected async override Task OnParametersSetAsync()
+    {
+        category = await categoryService.GetByGuid(CategoryGuid);
+    }
+
+    async Task UpdateRegister()
+    {
+        loading = true;
+        try
+        {
+            await categoryService.Update(category);
+            AlertService.Success("Register updated successfully", keepAfterRouteChange: true);
+            if (PageHistoryState.CanGoBack()){
+                navManager.NavigateTo(PageHistoryState.GetGoBackPage());
+            }
+            else{
+                navManager.NavigateTo("/category/1");
+            } 
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

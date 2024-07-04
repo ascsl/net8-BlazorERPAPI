@@ -1,0 +1,175 @@
+@page "/category/{Page}"
+@inject Services.ICategoryService categoryService
+@inject Services.IUserService UserService
+@inject Microsoft.AspNetCore.Components.NavigationManager UriHelper
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Categories</h1>
+<br />
+
+<div class="row mb-3">
+    <div class="col-md-7">
+        @if (LoggedIn)
+        {
+            <NavLink href="/category/create" class="btn btn-sm btn-success mb-2">Add category</NavLink>
+        }
+    </div>
+    <div class="input-group col-md-5 text-md-right">
+        <input name="SearchInput" type="text" class="form-control" placeholder="Name" @bind="this.SearchTerm" @onkeyup="SearchBoxKeyPress" />
+        <div class="input-group-btn">
+            <button name="SearchButton" class="btn btn-default" @onclick="SearchClick">
+                <i class="oi oi-magnifying-glass" title="search" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="input-group-btn">
+            <button name="SearchClear" class="btn btn-default" @onclick="ClearSearch">
+                <i class="oi oi-x" title="clear" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+@if (listRegister == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th style="width:25%">Name</th>
+                <th style="width:5%"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in listRegister.Results)
+            {
+                <tr>
+                    <td>@row.Name</td>
+                    <td style="white-space: nowrap">
+                        <NavLink href="@($"/category/guid/{row.CategoryGuid}")" class="oi oi-eye text-primary mr-3 nounderline"></NavLink>
+                        @if (LoggedIn)
+                        {
+                            <NavLink href="@($"/category/update/{row.CategoryGuid}")" class="oi oi-pencil text-warning mr-2 nounderline"></NavLink>
+
+                            @if (row.IsDeleting)
+                            {
+                                <button @onclick="@(() => Delete(row))" disabled="@row.IsDeleting" class=" btn btn-link oi oi-trash text-danger mr-1 nounderline">
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                </button>
+                            }
+                            else
+                            {
+                                <button @onclick="@(() => Delete(row))" disabled="@row.IsDeleting" class=" btn btn-link oi oi-trash text-danger mr-1 nounderline">
+                                    <span></span>
+                                </button>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <Pager Result=@listRegister PageChanged=PagerPageChanged />
+}
+
+@code {
+    [Parameter]
+    public string Page { get; set; } = "1";
+    [Parameter]
+    public string SearchTerm { get; set; } = string.Empty;
+    protected PagedResult<Category> listRegister;
+
+    public bool LoggedIn
+    {
+//        get { return UserService.User != null; }
+        get { return true; }
+    }
+
+    protected override void OnInitialized()
+    {
+        Console.WriteLine("Client.Pages.Category.List, OnInitialized:");
+        Console.WriteLine(UriHelper.Uri);
+        PageHistoryState.AddPageToHistory(UriHelper.Uri);
+        base.OnInitialized();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Console.WriteLine("Client.Pages.Category.List, OnParametersSetAsync:");
+        try
+        {
+            Console.WriteLine($"Client.Pages.Category.List, OnParametersSetAsync try: {SearchTerm}, {Page}");
+            listRegister = await categoryService.GetCategories(null, Page);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Client.Pages.Category.List, OnParametersSetAsync catch: Error al obtener datos: {ex.Message}");
+            listRegister = new PagedResult<Category>();
+        }
+        finally
+        {
+            Console.WriteLine($"Client.Pages.Category.List, OnParametersSetAsync fin: StateHasChanged()");
+            StateHasChanged();
+        }
+    }
+
+    protected async Task SearchBoxKeyPress(KeyboardEventArgs ev)
+    {
+        Console.WriteLine("Client.Pages.Category.List, SearchBoxKeyPress:");
+        if (ev.Key == "Enter")
+        {
+            await SearchClick();
+        }
+    }
+
+    protected async Task SearchClick()
+    {
+        Console.WriteLine("Client.Pages.Category.List, SearchClick:");
+        if (string.IsNullOrEmpty(SearchTerm))
+        {
+            listRegister = await categoryService.GetCategories(null, Page);
+            StateHasChanged();
+            return;
+        }
+        listRegister = await categoryService.GetCategories(SearchTerm, Page);
+        StateHasChanged();
+    }
+
+    protected async Task ClearSearch()
+    {
+        Console.WriteLine("Client.Pages.Category.List, ClearSearch:");
+        SearchTerm = string.Empty;
+        listRegister = await categoryService.GetCategories(SearchTerm, Page);
+        PageHistoryState.AddPageToHistory(UriHelper.Uri);
+        StateHasChanged();
+    }
+
+    protected void PagerPageChanged(int page)
+    {
+        Console.WriteLine("Client.Pages.Category.List, PagerPageChanged:");
+        UriHelper.NavigateTo("/category/" + page);
+        PageHistoryState.AddPageToHistory(UriHelper.Uri);
+    }
+
+    private async void Delete(Category _row)
+    {
+        Console.WriteLine("Client.Pages.Category.List, Delete:");
+        var row = _row;
+        row.IsDeleting = true;
+        try
+        {
+            await categoryService.Delete(row.CategoryId);
+            listRegister = await categoryService.GetCategories(SearchTerm, Page);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar: {ex.Message}");
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+}

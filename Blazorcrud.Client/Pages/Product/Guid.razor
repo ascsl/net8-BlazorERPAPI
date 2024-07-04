@@ -1,0 +1,139 @@
+@page "/product/guid/{guid}"
+@inject IProductService productService
+@inject ICartItemService cartitemService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>View Product</h1>
+<br/>
+
+<table class="table col-md-9">
+    <tbody>
+        <tr>
+            <th scope="row">Guid</th>
+            <td>@product.ProductGuid</td>
+        </tr>
+        <tr>
+            <th scope="row">Title</th>
+            <td>@product.Title</td>
+        </tr>
+        <tr>
+            <th>Cantidad:</th>
+            <td>
+                <p>@quantity</p>
+            </td>
+            <td>
+                <button class="btn btn-primary" @onclick="() => DecrementQuantity()" disabled="@(!activateDecrement)">-</button>
+            </td>
+            <td>
+                <button class="btn btn-primary" @onclick="() => IncrementQuantity()" disabled="@(!activateIncrement)">+</button>
+            </td>
+            <td>
+                <button class="btn btn-primary" @onclick="() => AddToCart()">Add to cart</button>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<hr />
+<h3>Rainchecks</h3>
+<hr />
+
+<table class="table">
+    <thead class="thead-light">
+        <tr>
+            <th>Store</th>
+            <th>Product</th>
+            <th>Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var raincheck in product.Rainchecks)
+        {
+            <tr>
+                <td>@raincheck.Store.Name</td>
+                <td>@raincheck.Product.Title</td>
+                <td>@raincheck.Count</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="form-group">
+    @if (PageHistoryState.CanGoBack()){
+        <NavLink href="@PageHistoryState.GetGoBackPage()" class="btn btn-link">Back</NavLink>
+    }
+    else{
+        <NavLink href="/product/1" class="btn btn-link">Back</NavLink>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string guid { get; set; }
+
+    int quantity { get; set; } = 1;
+    int maxQuantity { get; set; } = 5;
+    bool activateDecrement { get; set; } = false;
+    bool activateIncrement { get; set; } = true;
+
+    Product product = new Product
+    {
+        Title = "",
+        Rainchecks = new List<Raincheck>
+        {
+            new Raincheck {Name=""}
+        }
+    };
+    
+    protected async override Task OnParametersSetAsync()
+    {
+        product = await productService.GetByGuid(guid);
+    }
+
+    protected void IncrementQuantity()
+    {
+        if (quantity < maxQuantity)
+        {
+            quantity++;
+            activateDecrement = true;
+
+            if (quantity >= maxQuantity)
+            {
+                activateIncrement = false;
+            }
+        }
+        StateHasChanged();
+    }
+
+    protected void DecrementQuantity()
+    {
+        if (quantity > 1)
+        {
+            quantity--;
+            activateIncrement = true;
+
+            if (quantity < 2)
+            {
+                activateDecrement = false;
+            }
+        }
+        StateHasChanged();
+    }
+
+    protected void OnQuantityChanged(ChangeEventArgs e)
+    {
+        quantity = int.Parse(e.Value.ToString());
+        activateDecrement = quantity > 1;
+        StateHasChanged();
+    }
+
+    private void AddToCart()
+    {
+        if (product != null)
+        {
+            // Agregar el producto al carrito
+            Console.WriteLine($"Producto añadido al carrito: {product.ProductGuid}");
+        }
+    }
+}

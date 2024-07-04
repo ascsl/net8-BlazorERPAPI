@@ -1,0 +1,70 @@
+@page "/category/guid/{guid}"
+@inject ICategoryService categoryService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>View Category</h1>
+<br/>
+
+<table class="table col-md-6">
+    <tbody>
+        <tr>
+            <th scope="row">Guid</th>
+            <td>@category.CategoryGuid</td>
+        </tr>
+        <tr>
+            <th scope="row">Name</th>
+            <td>@category.Name</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr />
+<h3>Products</h3>
+<hr />
+
+<table class="table">
+    <thead class="thead-light">
+        <tr>
+            <th>Guid</th>
+            <th>Title</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in category.Products)
+        {
+            <tr>
+                <td>@product.ProductGuid</td>
+                <td>@product.Title</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="form-group">
+    @if (PageHistoryState.CanGoBack()){
+        <NavLink href="@PageHistoryState.GetGoBackPage()" class="btn btn-link">Back</NavLink>
+    }
+    else{
+        <NavLink href="/category/1" class="btn btn-link">Back</NavLink>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string guid { get; set; }
+
+    Category category = new Category
+    {
+        Name = "",
+        Products = new List<Product>
+        {
+            new Product {Title=""}
+        }
+    };
+    
+    protected async override Task OnParametersSetAsync()
+    {
+        category = await categoryService.GetByGuid(guid);
+    }
+}

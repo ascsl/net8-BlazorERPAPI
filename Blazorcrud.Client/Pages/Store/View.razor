@@ -1,0 +1,48 @@
+@page "/store/view/{id}"
+@inject IStoreService StoreService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>View Store</h1>
+<br/>
+
+<table class="table col-md-6">
+    <tbody>
+        <tr>
+            <th scope="row">Id</th>
+            <td>@store.StoreGuid</td>
+        </tr>
+        <tr>
+            <th scope="row">Name</th>
+            <td>@store.Name</td>
+        </tr>
+    </tbody>
+</table>
+
+<hr />
+    <h3>Addresses</h3>
+<hr />
+
+<div class="form-group">
+    @if (PageHistoryState.CanGoBack()){
+        <NavLink href="@PageHistoryState.GetGoBackPage()" class="btn btn-link">Back</NavLink>
+    }
+    else{
+        <NavLink href="/store/1" class="btn btn-link">Back</NavLink>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string StoreId { get; set; }
+
+    Store store = new Store
+    {
+        Name = "",
+    };
+    
+    protected async override Task OnParametersSetAsync()
+    {
+       store = await StoreService.GetById(int.Parse(StoreId));
+    }
+}

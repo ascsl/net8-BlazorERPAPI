@@ -1,0 +1,51 @@
+@page "/store/update/{id}"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IStoreService StoreService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Edit Store</h1>
+<br/>
+
+<Form ButtonText="Update" store="@store" loading="@loading"
+      OnValidSubmit="@UpdateRegister" />
+
+@code {
+    bool loading = false;
+    
+    [Parameter]
+    public string StoreId { get; set; }
+
+    Store store = new Store
+    {
+        Name = "",
+    };
+    
+    protected async override Task OnParametersSetAsync()
+    {
+       store = await StoreService.GetById(int.Parse(StoreId));
+    }
+
+    async Task UpdateRegister()
+    {
+        loading = true;
+        try
+        {
+            await StoreService.Update(store);
+            AlertService.Success("Register updated successfully", keepAfterRouteChange: true);
+            if (PageHistoryState.CanGoBack()){
+                navManager.NavigateTo(PageHistoryState.GetGoBackPage());
+            }
+            else{
+                navManager.NavigateTo("/store/1");
+            } 
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

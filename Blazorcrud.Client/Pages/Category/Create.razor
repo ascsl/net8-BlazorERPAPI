@@ -1,0 +1,43 @@
+@page "/category/create"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject ICategoryService categoryService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Create Store</h1>
+<br/>
+
+<Form ButtonText="Create" category="@category" loading="@loading"
+      OnValidSubmit="@CreateRegister" />
+
+@code {
+    bool loading = false;
+
+    Category category = new Category
+    {
+        Name = "",
+    };
+
+    async Task CreateRegister()
+    {
+        loading = true;
+        try
+        {
+            await categoryService.Create(category);
+            AlertService.Success("Register added successfully", keepAfterRouteChange: true);
+            if (PageHistoryState.CanGoBack()){
+                navManager.NavigateTo(PageHistoryState.GetGoBackPage());
+            }
+            else{
+                navManager.NavigateTo("/category/1");
+            } 
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

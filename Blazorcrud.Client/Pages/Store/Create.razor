@@ -1,0 +1,43 @@
+@page "/store/create"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IStoreService storeService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Create Store</h1>
+<br/>
+
+<Form ButtonText="Create" store="@store" loading="@loading"
+      OnValidSubmit="@CreateRegister" />
+
+@code {
+    bool loading = false;
+
+    Store store = new Store
+    {
+        Name = "",
+    };
+
+    async Task CreateRegister()
+    {
+        loading = true;
+        try
+        {
+            await storeService.Create(store);
+            AlertService.Success("Register added successfully", keepAfterRouteChange: true);
+            if (PageHistoryState.CanGoBack()){
+                navManager.NavigateTo(PageHistoryState.GetGoBackPage());
+            }
+            else{
+                navManager.NavigateTo("/store/1");
+            } 
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,51 @@
+@page "/product/update/{guid}"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IProductService productService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Edit Store</h1>
+<br/>
+
+<Form ButtonText="Update" product="@product" loading="@loading"
+      OnValidSubmit="@UpdateRegister" />
+
+@code {
+    bool loading = false;
+    
+    [Parameter]
+    public string ProductGuid { get; set; }
+
+    Product product = new Product
+        {
+        Title = "",
+    };
+    
+    protected async override Task OnParametersSetAsync()
+    {
+        product = await productService.GetByGuid(ProductGuid);
+    }
+
+    async Task UpdateRegister()
+    {
+        loading = true;
+        try
+        {
+            await productService.Update(product);
+            AlertService.Success("Register updated successfully", keepAfterRouteChange: true);
+            if (PageHistoryState.CanGoBack()){
+                navManager.NavigateTo(PageHistoryState.GetGoBackPage());
+            }
+            else{
+                navManager.NavigateTo("/product/1");
+            } 
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

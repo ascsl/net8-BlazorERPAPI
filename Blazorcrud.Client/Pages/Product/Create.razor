@@ -1,0 +1,43 @@
+@page "/product/create"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IProductService productService
+@inject NavigationManager navManager
+@inject Blazorcrud.Client.Shared.PageHistoryState PageHistoryState
+
+<h1>Create Product</h1>
+<br/>
+
+<Form ButtonText="Create" product="@product" loading="@loading"
+      OnValidSubmit="@CreateRegister" />
+
+@code {
+    bool loading = false;
+
+    Product product = new Product
+    {
+        Title = "",
+    };
+
+    async Task CreateRegister()
+    {
+        loading = true;
+        try
+        {
+            await productService.Create(product);
+            AlertService.Success("Register added successfully", keepAfterRouteChange: true);
+            if (PageHistoryState.CanGoBack()){
+                navManager.NavigateTo(PageHistoryState.GetGoBackPage());
+            }
+            else{
+                navManager.NavigateTo("/product/1");
+            } 
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}
